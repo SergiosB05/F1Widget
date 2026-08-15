@@ -51,9 +51,22 @@ function localDate(isoString) {
 }
 
 async function fetchRaceData() {
-  const req = new Request(WORKER_URL);
-  req.timeoutInterval = 10;
-  return await req.loadJSON();
+  const fm = FileManager.local();
+  const cachePath = fm.joinPath(fm.documentsDirectory(), "f1_widget_data_cache.json");
+
+  try {
+    const req = new Request(WORKER_URL);
+    req.timeoutInterval = 10;
+    const data = await req.loadJSON();
+    fm.writeString(cachePath, JSON.stringify(data));
+    return data;
+  } catch (e) {
+    if (fm.fileExists(cachePath)) {
+      const cachedStr = fm.readString(cachePath);
+      return JSON.parse(cachedStr);
+    }
+    throw e;
+  }
 }
 
 async function buildWidget(size) {
