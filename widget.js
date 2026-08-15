@@ -127,10 +127,10 @@ function createRacingBackground() {
 function addGlassPanel(parent) {
   const panel = parent.addStack();
   panel.backgroundColor = COLORS.glassBg;
-  panel.cornerRadius = 16;
-  panel.borderWidth = 1.5;
+  panel.cornerRadius = 14;
+  panel.borderWidth = 1.2;
   panel.borderColor = COLORS.glassBorder;
-  panel.setPadding(12, 12, 12, 12);
+  panel.setPadding(8, 8, 8, 8);
   return panel;
 }
 
@@ -139,7 +139,7 @@ async function buildWidget(size) {
   
   // Apply Custom Racing Background
   widget.backgroundImage = createRacingBackground();
-  widget.setPadding(14, 14, 14, 14);
+  widget.setPadding(12, 12, 12, 12);
 
   let data;
   try {
@@ -167,11 +167,11 @@ async function buildWidget(size) {
   if (isSmall) {
     // SINGLE COMPACT GLASS PANEL FOR SMALL WIDGET
     mainLayout.layoutVertically();
-    widget.setPadding(10, 10, 10, 10);
+    widget.setPadding(6, 6, 6, 6);
     
     const panel = addGlassPanel(mainLayout);
     panel.layoutVertically();
-    panel.setPadding(10, 10, 10, 10);
+    panel.setPadding(8, 8, 8, 8);
     
     // Top Row: Flag + City
     const topRow = panel.addStack();
@@ -187,10 +187,14 @@ async function buildWidget(size) {
     locality.font = new Font("HelveticaNeue-CondensedBlack", 18);
     locality.textColor = COLORS.white;
     locality.shadowRadius = 2;
+    locality.lineLimit = 1;
+    locality.minimumScaleFactor = 0.5;
     
     const gpName = locStack.addText(data.raceName.replace(" Grand Prix", " GP").toUpperCase());
     gpName.font = Font.systemFont(9);
     gpName.textColor = COLORS.gray;
+    gpName.lineLimit = 1;
+    gpName.minimumScaleFactor = 0.5;
     
     panel.addSpacer(8);
     
@@ -200,6 +204,8 @@ async function buildWidget(size) {
     const datesLabel = datesRow.addText(weekendStr.toUpperCase());
     datesLabel.font = Font.boldSystemFont(10);
     datesLabel.textColor = COLORS.white;
+    datesLabel.lineLimit = 1;
+    datesLabel.minimumScaleFactor = 0.5;
     
     if (data.isSprint) {
       datesRow.addSpacer(6);
@@ -210,6 +216,8 @@ async function buildWidget(size) {
       const sTxt = sprintBadge.addText("SPRINT");
       sTxt.font = Font.blackSystemFont(8);
       sTxt.textColor = Color.black();
+      sTxt.lineLimit = 1;
+      sTxt.minimumScaleFactor = 0.5;
     }
     
     panel.addSpacer(); // push sessions to bottom
@@ -244,10 +252,14 @@ async function buildWidget(size) {
     locality.textColor = COLORS.white;
     locality.shadowRadius = 2;
     locality.shadowColor = new Color("#000000", 0.8);
+    locality.lineLimit = 1;
+    locality.minimumScaleFactor = 0.4;
 
     const gpName = locStack.addText(data.raceName.replace(" Grand Prix", " GP").toUpperCase());
     gpName.font = Font.systemFont(11);
     gpName.textColor = COLORS.gray;
+    gpName.lineLimit = 1;
+    gpName.minimumScaleFactor = 0.5;
 
     leftPanel.addSpacer(12);
 
@@ -267,6 +279,8 @@ async function buildWidget(size) {
     const datesLabel = datesRow.addText(weekendStr.toUpperCase());
     datesLabel.font = Font.boldSystemFont(12);
     datesLabel.textColor = COLORS.white;
+    datesLabel.lineLimit = 1;
+    datesLabel.minimumScaleFactor = 0.5;
 
     if (data.isSprint) {
       datesRow.addSpacer(10);
@@ -286,9 +300,11 @@ async function buildWidget(size) {
       const sTxt = sprintBadge.addText("SPRINT");
       sTxt.font = Font.blackSystemFont(10);
       sTxt.textColor = Color.black();
+      sTxt.lineLimit = 1;
+      sTxt.minimumScaleFactor = 0.5;
     }
 
-    mainLayout.addSpacer(14);
+    mainLayout.addSpacer(10);
     
     const rightPanel = addGlassPanel(mainLayout);
     rightPanel.layoutVertically();
@@ -328,30 +344,31 @@ function renderSessions(parent, data, size) {
     if (isNext) {
       row.backgroundColor = COLORS.accentBg;
       row.cornerRadius = isSmall ? 6 : 8;
-      row.borderWidth = 1.5;
+      row.borderWidth = 1.2;
       row.borderColor = COLORS.accentBorder;
     }
     const pad = isSmall ? 4 : 7;
-    row.setPadding(pad, pad + 3, pad, pad + 3);
+    row.setPadding(pad, pad + 2, pad, pad + 2);
 
     // Pill Badge
     const badgeStack = row.addStack();
     badgeStack.backgroundColor = cd.past ? COLORS.dimmed : sessionColor(s.short);
-    badgeStack.cornerRadius = isSmall ? 5 : 7;
-    badgeStack.size = isSmall ? new Size(34, 16) : new Size(46, 20);
+    badgeStack.cornerRadius = isSmall ? 4 : 6;
+    const badgePad = isSmall ? 3 : 5;
+    badgeStack.setPadding(1, badgePad, 1, badgePad);
     badgeStack.centerAlignContent();
     if (!cd.past) {
-      badgeStack.borderWidth = 1.5;
+      badgeStack.borderWidth = 1.2;
       badgeStack.borderColor = new Color("#ffffff", 0.25);
     }
     
-    badgeStack.addSpacer(); 
     const badge = badgeStack.addText(s.short);
-    badge.font = Font.blackSystemFont(isSmall ? 8 : 10);
+    badge.font = Font.blackSystemFont(isSmall ? 8 : 9);
     badge.textColor = cd.past ? new Color("#999") : Color.white();
-    badgeStack.addSpacer();
+    badge.lineLimit = 1;
+    badge.minimumScaleFactor = 0.5;
 
-    row.addSpacer(isSmall ? 6 : 10);
+    row.addSpacer(isSmall ? 6 : 8);
 
     // Time & Date
     const timeStack = row.addStack();
@@ -359,25 +376,30 @@ function renderSessions(parent, data, size) {
 
     const timeLabel = timeStack.addText(localTime(s.iso));
     timeLabel.textColor = cd.past ? COLORS.gray : (isNext ? COLORS.white : new Color("#f0f0f0"));
-    timeLabel.font = new Font("Menlo-Bold", isSmall ? 10 : 12);
+    timeLabel.font = new Font("Menlo-Bold", isSmall ? 9 : 11);
+    timeLabel.lineLimit = 1;
+    timeLabel.minimumScaleFactor = 0.5;
     
     const dateLabel = timeStack.addText(localDate(s.iso).toUpperCase());
     dateLabel.textColor = isNext ? new Color("#ffcccc") : COLORS.gray;
-    dateLabel.font = Font.semiboldSystemFont(isSmall ? 7 : 9);
+    dateLabel.font = Font.semiboldSystemFont(isSmall ? 7 : 8);
+    dateLabel.lineLimit = 1;
+    dateLabel.minimumScaleFactor = 0.5;
 
     row.addSpacer();
 
     // Countdown Timer
     const cdText = row.addText(cd.label);
     if (isNext) {
-      cdText.font = new Font("Menlo-Bold", isSmall ? 10 : 12);
+      cdText.font = new Font("Menlo-Bold", isSmall ? 9 : 11);
       cdText.textColor = COLORS.green; 
     } else {
-      cdText.font = new Font("Menlo-Regular", isSmall ? 9 : 11);
+      cdText.font = new Font("Menlo-Regular", isSmall ? 8 : 10);
       cdText.textColor = cd.past ? COLORS.dimmed : COLORS.gray;
     }
     cdText.rightAlignText();
-    cdText.minimumScaleFactor = 0.8;
+    cdText.lineLimit = 1;
+    cdText.minimumScaleFactor = 0.5;
 
     if (i < endIdx - 1) parent.addSpacer(isSmall ? 4 : 6);
   }
