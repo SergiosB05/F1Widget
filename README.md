@@ -4,6 +4,12 @@
 
 A premium, race-inspired iOS home screen widget for Formula 1 fans. Built with [Scriptable](https://scriptable.app/), it brings the pit-wall telemetry experience straight to your iPhone.
 
+<p align="center">
+  <img src="small.jpg" width="250" alt="Small Widget Example">
+  &nbsp;&nbsp;&nbsp;
+  <img src="big.jpg" width="250" alt="Medium Widget Example">
+</p>
+
 ---
 
 ## Features
@@ -13,7 +19,8 @@ A premium, race-inspired iOS home screen widget for Formula 1 fans. Built with [
 - **Smart Dynamic Layout:** 
   - Hides Free Practice sessions during Sprint weekends to focus on the action.
   - Automatically scrolls the timeline so the *next* upcoming session is always highlighted and visible.
-- **Modern Race UI:** Features a dark carbon-like gradient, solid color-coded session badges, and an aggressive racing aesthetic.
+- **Modern Race UI:** Features a custom carbon-fiber background with aggressive racing stripes, frosted glassmorphism panels, and color-coded session badges.
+- **Offline Support:** Automatically caches telemetry data. If you lose connection, the widget stays alive with the latest known data.
 - **Lightweight:** Fast, ad-free, and minimal battery consumption.
 
 ---
