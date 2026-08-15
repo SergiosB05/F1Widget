@@ -11,6 +11,8 @@ const COLORS = {
   dimmed: new Color("#3a3a44"),
   accentBg: new Color("#e10600", 0.15),
   accentBorder: new Color("#e10600", 0.6),
+  glassBg: new Color("#ffffff", 0.08),
+  glassBorder: new Color("#ffffff", 0.15),
 };
 
 function sessionColor(short) {
@@ -71,26 +73,81 @@ async function fetchRaceData() {
   }
 }
 
+function createRacingBackground() {
+  const size = 1000;
+  const ctx = new DrawContext();
+  ctx.size = new Size(size, size);
+  ctx.opaque = true;
+
+  // Dark carbon base
+  ctx.setFillColor(new Color("#0a0a0c"));
+  ctx.fillRect(new Rect(0, 0, size, size));
+
+  // Dynamic Grid / Carbon pattern
+  ctx.setStrokeColor(new Color("#ffffff", 0.03));
+  ctx.setLineWidth(3);
+  for (let i = -size; i < size * 2; i += 45) {
+    const p = new Path();
+    p.move(new Point(i, 0));
+    p.addLine(new Point(i + size, size));
+    ctx.addPath(p);
+    ctx.strokePath();
+  }
+
+  // Red and white aggressive racing stripes
+  // Red stripe
+  const p1 = new Path();
+  p1.move(new Point(size * 0.45, 0));
+  p1.addLine(new Point(size * 0.65, 0));
+  p1.addLine(new Point(size * 0.15, size));
+  p1.addLine(new Point(-0.05 * size, size));
+  p1.closeSubpath();
+  ctx.setFillColor(new Color("#e10600", 0.5)); 
+  ctx.addPath(p1);
+  ctx.fillPath();
+  
+  // White stripe
+  const p2 = new Path();
+  p2.move(new Point(size * 0.70, 0));
+  p2.addLine(new Point(size * 0.80, 0));
+  p2.addLine(new Point(size * 0.30, size));
+  p2.addLine(new Point(size * 0.20, size));
+  p2.closeSubpath();
+  ctx.setFillColor(new Color("#ffffff", 0.15));
+  ctx.addPath(p2);
+  ctx.fillPath();
+
+  // Dark vignette bottom layer
+  ctx.setFillColor(new Color("#000000", 0.6));
+  ctx.fillRect(new Rect(0, size * 0.6, size, size * 0.4));
+
+  return ctx.getImage();
+}
+
+function addGlassPanel(parent) {
+  const panel = parent.addStack();
+  panel.backgroundColor = COLORS.glassBg;
+  panel.cornerRadius = 16;
+  panel.borderWidth = 1.5;
+  panel.borderColor = COLORS.glassBorder;
+  panel.setPadding(12, 12, 12, 12);
+  return panel;
+}
+
 async function buildWidget(size) {
   const widget = new ListWidget();
   
-  const gradient = new LinearGradient();
-  // Subtle red tint at the top-left for that F1 racing feel
-  gradient.colors = [new Color("#261414"), new Color("#14141a"), new Color("#08080a")];
-  gradient.locations = [0.0, 0.4, 1.0];
-  gradient.startPoint = new Point(0, 0);
-  gradient.endPoint = new Point(1, 1);
-  widget.backgroundGradient = gradient;
-  
+  // Apply Custom Racing Background
+  widget.backgroundImage = createRacingBackground();
   widget.setPadding(14, 14, 14, 14);
 
   let data;
   try {
     data = await fetchRaceData();
   } catch (e) {
-    const err = widget.addText("Telemetry Lost (Connection Error)");
+    const err = widget.addText("TELEMETRY LOST");
     err.textColor = COLORS.red;
-    err.font = new Font("Menlo-Bold", 12);
+    err.font = new Font("Menlo-Bold", 14);
     return widget;
   }
 
@@ -107,97 +164,90 @@ async function buildWidget(size) {
 
   // MAIN LAYOUT
   const mainLayout = widget.addStack();
-  mainLayout.layoutHorizontally();
+  if (isSmall) {
+    mainLayout.layoutVertically();
+  } else {
+    mainLayout.layoutHorizontally();
+  }
   mainLayout.centerAlignContent();
 
-  // LEFT COLUMN (Info)
-  const leftCol = mainLayout.addStack();
-  leftCol.layoutVertically();
+  // LEFT COLUMN (Glass Panel for Info)
+  const leftPanel = addGlassPanel(mainLayout);
+  leftPanel.layoutVertically();
   
-  // Flag
-  const flagText = leftCol.addText(data.flag || "🏁");
-  flagText.font = Font.systemFont(isSmall ? 28 : 36);
-  flagText.shadowRadius = 2;
-  flagText.shadowColor = new Color("#000000", 0.3);
-  leftCol.addSpacer(2);
+  // Flag & Locality Row
+  const topRow = leftPanel.addStack();
+  topRow.centerAlignContent();
+  
+  const flagText = topRow.addText(data.flag || "🏁");
+  flagText.font = Font.systemFont(isSmall ? 26 : 34);
+  flagText.shadowRadius = 3;
+  flagText.shadowColor = new Color("#000", 0.5);
+  topRow.addSpacer(8);
 
-  // Locality (City)
-  const locality = leftCol.addText((data.locality || data.country).toUpperCase());
-  locality.font = new Font("HelveticaNeue-CondensedBlack", isSmall ? 18 : 22);
+  const locStack = topRow.addStack();
+  locStack.layoutVertically();
+  
+  const locality = locStack.addText((data.locality || data.country).toUpperCase());
+  // Heavy Italic for F1 Racing aesthetic
+  locality.font = new Font("HelveticaNeue-CondensedBlack", isSmall ? 18 : 24);
   locality.textColor = COLORS.white;
-  locality.minimumScaleFactor = 0.5;
-  locality.lineLimit = 1;
-  locality.shadowRadius = 1;
-  locality.shadowColor = new Color("#000000", 0.5);
+  locality.shadowRadius = 2;
+  locality.shadowColor = new Color("#000000", 0.8);
 
-  // Race Name
-  const gpName = leftCol.addText(data.raceName.replace(" Grand Prix", " GP").toUpperCase());
-  gpName.font = Font.mediumSystemFont(10);
+  const gpName = locStack.addText(data.raceName.replace(" Grand Prix", " GP").toUpperCase());
+  gpName.font = Font.systemFont(11);
   gpName.textColor = COLORS.gray;
-  gpName.minimumScaleFactor = 0.7;
-  gpName.lineLimit = 1;
 
-  leftCol.addSpacer(6);
+  leftPanel.addSpacer(12);
 
   // Dates & Badges
-  const datesRow = leftCol.addStack();
+  const datesRow = leftPanel.addStack();
   datesRow.layoutHorizontally();
   datesRow.centerAlignContent();
   
-  // Calendar Icon
   const calSym = SFSymbol.named("calendar");
   if (calSym) {
     const calImg = datesRow.addImage(calSym.image);
-    calImg.imageSize = new Size(10, 10);
-    calImg.tintColor = COLORS.red;
-    datesRow.addSpacer(3);
+    calImg.imageSize = new Size(13, 13);
+    calImg.tintColor = COLORS.white;
+    datesRow.addSpacer(5);
   }
 
   const datesLabel = datesRow.addText(weekendStr.toUpperCase());
-  datesLabel.font = Font.boldSystemFont(9);
+  datesLabel.font = Font.boldSystemFont(12);
   datesLabel.textColor = COLORS.white;
 
   if (data.isSprint) {
-    datesRow.addSpacer(5);
+    datesRow.addSpacer(10);
     const sprintBadge = datesRow.addStack();
     sprintBadge.backgroundColor = COLORS.yellow;
-    sprintBadge.cornerRadius = 4;
-    sprintBadge.setPadding(2, 5, 2, 5);
+    sprintBadge.cornerRadius = 6;
+    sprintBadge.setPadding(4, 7, 4, 7);
     
     const boltSym = SFSymbol.named("bolt.fill");
     if (boltSym) {
       const boltImg = sprintBadge.addImage(boltSym.image);
-      boltImg.imageSize = new Size(8, 8);
+      boltImg.imageSize = new Size(11, 11);
       boltImg.tintColor = Color.black();
-      sprintBadge.addSpacer(2);
+      sprintBadge.addSpacer(4);
     }
     
     const sTxt = sprintBadge.addText("SPRINT");
-    sTxt.font = Font.blackSystemFont(8);
+    sTxt.font = Font.blackSystemFont(10);
     sTxt.textColor = Color.black();
   }
 
-  leftCol.addSpacer(); // Push everything to the top
-
   if (isSmall) {
-    // In SMALL widget, stack vertically
-    widget.addSpacer(8);
-    renderSessions(widget, data, size);
+    widget.addSpacer(10);
+    const rightPanel = addGlassPanel(mainLayout);
+    rightPanel.layoutVertically();
+    renderSessions(rightPanel, data, size);
   } else {
-    // In MEDIUM/LARGE widget, use Right Column
-    mainLayout.addSpacer(12);
-    
-    // Vertical Divider
-    const divider = mainLayout.addStack();
-    divider.size = new Size(1, 0); // 1px wide, full height
-    divider.backgroundColor = new Color("#ffffff", 0.15);
-    
-    mainLayout.addSpacer(12);
-
-    // RIGHT COLUMN (Sessions)
-    const rightCol = mainLayout.addStack();
-    rightCol.layoutVertically();
-    renderSessions(rightCol, data, size);
+    mainLayout.addSpacer(14);
+    const rightPanel = addGlassPanel(mainLayout);
+    rightPanel.layoutVertically();
+    renderSessions(rightPanel, data, size);
   }
 
   return widget;
@@ -208,9 +258,7 @@ function renderSessions(parent, data, size) {
   const now = new Date();
   const nextIdx = sessions.findIndex(s => new Date(s.iso) > now);
 
-  let maxRows = 4;
-  if (size === "large") maxRows = sessions.length;
-  if (size === "small") maxRows = 2; // Small widgets fit max 2 sessions cleanly
+  let maxRows = size === "large" ? sessions.length : (size === "small" ? 1 : 4);
   
   let startIdx = 0;
   if (sessions.length > maxRows) {
@@ -231,62 +279,61 @@ function renderSessions(parent, data, size) {
     row.layoutHorizontally();
     row.centerAlignContent();
     
-    // Highlight background for next session
     if (isNext) {
       row.backgroundColor = COLORS.accentBg;
-      row.cornerRadius = 6;
-      row.borderWidth = 1;
+      row.cornerRadius = 8;
+      row.borderWidth = 1.5;
       row.borderColor = COLORS.accentBorder;
     }
-    const pad = size === "small" ? 3 : 5;
-    row.setPadding(pad, pad + 2, pad, pad + 2);
+    const pad = size === "small" ? 5 : 7;
+    row.setPadding(pad, pad + 5, pad, pad + 5);
 
     // Pill Badge
     const badgeStack = row.addStack();
     badgeStack.backgroundColor = cd.past ? COLORS.dimmed : sessionColor(s.short);
-    badgeStack.cornerRadius = 5;
-    badgeStack.size = new Size(38, 16);
+    badgeStack.cornerRadius = 7;
+    badgeStack.size = new Size(46, 20);
     badgeStack.centerAlignContent();
     if (!cd.past) {
-      badgeStack.borderWidth = 1;
-      badgeStack.borderColor = new Color("#ffffff", 0.15);
+      badgeStack.borderWidth = 1.5;
+      badgeStack.borderColor = new Color("#ffffff", 0.25);
     }
     
     badgeStack.addSpacer(); 
     const badge = badgeStack.addText(s.short);
-    badge.font = Font.blackSystemFont(8);
+    badge.font = Font.blackSystemFont(10);
     badge.textColor = cd.past ? new Color("#999") : Color.white();
     badgeStack.addSpacer();
 
-    row.addSpacer(6);
+    row.addSpacer(10);
 
     // Time & Date
     const timeStack = row.addStack();
     timeStack.layoutVertically();
 
     const timeLabel = timeStack.addText(localTime(s.iso));
-    timeLabel.textColor = cd.past ? COLORS.gray : (isNext ? COLORS.white : new Color("#e0e0e0"));
-    timeLabel.font = new Font("Menlo-Bold", 10);
+    timeLabel.textColor = cd.past ? COLORS.gray : (isNext ? COLORS.white : new Color("#f0f0f0"));
+    timeLabel.font = new Font("Menlo-Bold", 12);
     
     const dateLabel = timeStack.addText(localDate(s.iso).toUpperCase());
     dateLabel.textColor = isNext ? new Color("#ffcccc") : COLORS.gray;
-    dateLabel.font = Font.semiboldSystemFont(7);
+    dateLabel.font = Font.semiboldSystemFont(9);
 
     row.addSpacer();
 
     // Countdown Timer
     const cdText = row.addText(cd.label);
     if (isNext) {
-      cdText.font = new Font("Menlo-Bold", 10);
+      cdText.font = new Font("Menlo-Bold", 12);
       cdText.textColor = COLORS.green; 
     } else {
-      cdText.font = new Font("Menlo-Regular", 9);
+      cdText.font = new Font("Menlo-Regular", 11);
       cdText.textColor = cd.past ? COLORS.dimmed : COLORS.gray;
     }
     cdText.rightAlignText();
     cdText.minimumScaleFactor = 0.8;
 
-    if (i < endIdx - 1) parent.addSpacer(2);
+    if (i < endIdx - 1) parent.addSpacer(6);
   }
 }
 
